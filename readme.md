@@ -1,11 +1,13 @@
 train20
 =======
 
-Code and data used to train models of 20c literary genres, 2016. The governing strategy here is to slice strategically, creating progressively smaller sets and progressively better models.
+Code and data used to train models of 20c literary genres. The governing strategy here is to slice strategically, creating progressively smaller sets and progressively better models.
 
-To achieve this start with volume-level discriminations, and then work downward to the page level, training page-level models _only within_ literary genres.
+To achieve this, we start with volume-level discriminations, and then work downward to the page level, training page-level models _only within_ literary genres.
 
 But also, even within the volume-level process, we work through successive eliminations — first constituting a rough list of possible fiction candidates by modeling fiction-against-everything, and then paring away things that a more precise model suggests are actually biography, drama, or poetry.
+
+Needless to say, no raw texts from in-copyright volumes will be exposed in this process. The modeling process works with extracted features, and even those are not exposed here.
 
 bzipmeta.csv
 ------------
