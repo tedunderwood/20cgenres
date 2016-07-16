@@ -91,8 +91,8 @@ def get_metadata(metapath):
     newdata['dra'] = []
 
     for idx in meta.index:
-        genres = str(meta.loc[idx, 'genres'])
-        subjects = str(meta.loc[idx, 'subjects'])
+        genres = str(meta.loc[idx, 'genres']).split('|')
+        subjects = str(meta.loc[idx, 'subjects']).split('|')
         title = str(meta.loc[idx, 'title'].lower())
 
         dra = False
@@ -140,9 +140,7 @@ def loadamodel(modelname):
     with open(modelpath, mode = 'rb') as f:
         modelbytes = f.read()
         model = pickle.loads(modelbytes)
-
-    assert model['name'] == modelname   # just a sanity check
-    # print(modelname, model['positivelabel'], model['negativelabel'])
+    print(modelname, model['positivelabel'], model['negativelabel'])
 
     return model
 
@@ -435,11 +433,12 @@ def main(sourcedir, metapath, modeldir, outpath, pairtree = False):
 
         if pairtree:
             path = get_pairtree(sourcedir, docid)
-            counts = counts4json(path, docid)
+            counts, error = counts4json(path, docid)
+            print(error)
+            print(path)
         else:
             path = os.path.join(sourcedir, utils.clean_pairtree(docid) + '.csv')
-            counts, error = counts4file(path)
-            print(error)
+            counts = counts4file(path)
 
         genredict = make_genredict(metadata, docid)
         genre, probability, explanation = volume_classification(models, counts, genredict)
