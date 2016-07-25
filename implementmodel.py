@@ -77,6 +77,15 @@ onevsonenames = ['ficvspoe', 'ficvsdra', 'ficvsbio', 'dravspoe', 'poevsbio', 'dr
 gauntletnames = ['ficvsnonbio', 'poevsnonbio']
 allnames = onevsallnames + onevsonenames + gauntletnames
 
+# Let's create a list of the top 1000 English words so we can check
+# the probability that a book is written in English
+
+dictionarypath = os.path.join(libpath, 'top1000words.txt')
+top1000words = set()
+with open(dictionarypath, encoding = 'utf-8') as f:
+    for line in f:
+        top1000words.add(line.strip())
+
 def get_metadata(metapath):
     ''' Returns the metadata as a pandas dataframe, translating strings
     to simpler boolean flags.
@@ -152,28 +161,32 @@ def counts4file(filepath):
     '''
 
     counts = Counter()
-    with open(filepath, encoding = 'utf-8') as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            word = row['feature']
-            if len(word) < 1:
-                continue
+    try:
+        with open(filepath, encoding = 'utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                word = row['feature']
+                if len(word) < 1:
+                    continue
 
-            ct = float(row['count'])
+                ct = float(row['count'])
 
-            if word.startswith('#header'):
-                word = word.replace('#header', '')
-            #
-            # This debatable choice treats header words as equivalent
-            # to occurrences in the body text. In practice, this seems
-            # to slightly improve performance, at least when you're using
-            # SVMs and relatively low numbers of features (140-300).
-            # Otherwise header words are in practice just discarded, because
-            # e.g. #headeract won't be one of the top 250 words.
+                if word.startswith('#header'):
+                    word = word.replace('#header', '')
+                #
+                # This debatable choice treats header words as equivalent
+                # to occurrences in the body text. In practice, this seems
+                # to slightly improve performance, at least when you're using
+                # SVMs and relatively low numbers of features (140-300).
+                # Otherwise header words are in practice just discarded, because
+                # e.g. #headeract won't be one of the top 250 words.
 
-            counts[word] += ct
+                counts[word] += ct
 
-    return counts
+        return counts, 'success', 0
+
+    except:
+        return counts, 'file not found', 0
 
 def onevolume2frame(vocabulary, counts):
     '''
@@ -371,6 +384,28 @@ def volume_classification(models, counts4volume, genredict):
         else:
             return tocheck, (onevsall_probs[tocheck] + 1) / 2, explanation + ', unconfirmed'
 
+def get_english_percent(counts, top1000englishwords):
+    '''
+    Percent of words in a volume that are contained in the set
+    top1000words; to be used later to weed out non-English books.
+    '''
+    allalpha = 0
+    allenglish = 0
+
+    for word, count in counts.items():
+        if not word.isalpha():
+            continue
+        else:
+            allalpha += count
+            if word in top1000englishwords:
+                allenglish += count
+
+    if allalpha == 0:
+        return 0
+    else:
+        return allenglish / allalpha
+
+
 def get_pairtree(pairtreeroot, htid):
 
     path, postfix = utils.pairtreepath(htid, pairtreeroot)
@@ -382,7 +417,7 @@ def counts4json(path, docid):
     if os.path.isfile(path):
         try:
             volume = parser.VolumeFromJson(path, docid)
-            counts = volume.get_volume_features()
+            counts, totalwords = volume.get_volume_features()
             flatcounts = Counter()
             for key, value in counts.items():
                 if key.startswith('#header'):
@@ -391,12 +426,12 @@ def counts4json(path, docid):
                 else:
                     flatcounts[key] += value
 
-            return flatcounts, 'success'
+            return flatcounts, 'success', totalwords
 
         except:
-            return Counter(), 'parsing failure'
+            return Counter(), 'parsing failure', 0
     else:
-        return Counter(), 'file not found'
+        return Counter(), 'file not found', 0
 
 
 def main(sourcedir, metapath, modeldir, outpath, pairtree = False):
@@ -409,7 +444,7 @@ def main(sourcedir, metapath, modeldir, outpath, pairtree = False):
     of a pairtree structure. Otherwise we assume it's a flat list.
     '''
 
-    global allnames
+    global allnames, top1000words
 
     # We're going to store all the models, by name, in a dictionary:
 
@@ -425,6 +460,8 @@ def main(sourcedir, metapath, modeldir, outpath, pairtree = False):
     predictedgenres = []
     predictedprobs = []
     explanations = []
+    wordcounts = []
+    englishpcts = []
 
     c = 0
     for docid in metadata.index:
@@ -433,21 +470,31 @@ def main(sourcedir, metapath, modeldir, outpath, pairtree = False):
 
         if pairtree:
             path = get_pairtree(sourcedir, docid)
-            counts, error = counts4json(path, docid)
-            print(error)
-            print(path)
+            counts, error, wordcount = counts4json(path, docid)
         else:
             path = os.path.join(sourcedir, utils.clean_pairtree(docid) + '.csv')
-            counts = counts4file(path)
+            counts, error, wordcount = counts4file(path)
 
-        genredict = make_genredict(metadata, docid)
-        genre, probability, explanation = volume_classification(models, counts, genredict)
+        if error == 'success':
+            genredict = make_genredict(metadata, docid)
+            englishpct = get_english_percent(counts, top1000words)
+            genre, probability, explanation = volume_classification(models, counts, genredict)
+        else:
+            englishpct = 0
+            genre = 'NA'
+            probability = 0
+            explanation = error
+
         predictedgenres.append(genre)
         predictedprobs.append(probability)
         explanations.append(explanation)
+        wordcounts.append(wordcount)
+        englishpcts.append(englishpct)
 
     metadata.loc[ : , 'predictedgenre'] = pd.Series(predictedgenres, index = metadata.index)
     metadata.loc[ : , 'probability'] = pd.Series(predictedprobs, index = metadata.index)
+    metadata.loc[ : , 'wordcount'] = pd.Series(wordcounts, index = metadata.index)
+    metadata.loc[ : , 'englishpct'] = pd.Series(englishpcts, index = metadata.index)
     metadata.loc[ : , 'explanation'] = pd.Series(explanations, index = metadata.index)
 
     metadata.to_csv(outpath)

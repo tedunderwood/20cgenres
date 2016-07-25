@@ -16,17 +16,25 @@ Created June 2016. Contains metadata for all the files with extracted features i
 
 inferfromreaders.py
 -------------------
-1) First stage of constructing a training set. This looks at 362 volumes tagged by undergrads at a page level and sorts them into volume-level groups. Produces *confidentvolumes.csv* as well as **genredividedvols.csv.** The latter are not used in volume-level classification.
+First stage of constructing a training set. This looks at 362 volumes tagged by undergrads at a page level and sorts them into volume-level groups. Produces *confidentvolumes.csv* as well as **genredividedvols.csv.** The latter are not used in volume-level classification.
 
 manualtagging.py
 ----------------
-2) Amplifies the page-level training set with several hundred volume-level genre tags assigned by Underwood. Places these in **taggedvolumes.csv.**
+Amplifies the page-level training set with several hundred volume-level genre tags assigned by Underwood. Places these in **taggedvolumes.csv.**
 
 createtrainingset.py
 --------------------
-3) Fuses the output of the previous two stages in order to produce **maintrainingset.csv.** This becomes the metadata used in ...
+Fuses the output of the previous two stages in order to produce **maintrainingset.csv.** This becomes the metadata used in ...
 
 trainamodel.py
 --------------
-4) Functions centrally needed for creating models of one genre against another genre, or of one genre against all other genres.
+Functions centrally needed for creating models of one genre against another genre, or of one genre against all other genres. Is called by ...
 
+parallelmodel.py
+----------------
+Which uses multiprocessing to accelerate grid search, among other things.
+
+
+implementmodel.py
+-----------------
+is the business end of this whole workflow, taking an ensemble of models produced by trainamodel.py and coordinating them (with some ad-hoc rules) in order to actually classify texts.
