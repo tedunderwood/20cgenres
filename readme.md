@@ -38,3 +38,7 @@ Which uses multiprocessing to accelerate grid search, among other things.
 implementmodel.py
 -----------------
 is the business end of this whole workflow, taking an ensemble of models produced by trainamodel.py and coordinating them (with some ad-hoc rules) in order to actually classify texts.
+
+page
+----
+Scripts to do page-level modeling, which trims front and back matter, including nonfiction prefaces. Note that in the updated (2016) workflow this only runs _after_ volume-level modeling.
