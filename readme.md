@@ -34,11 +34,18 @@ parallelmodel.py
 ----------------
 Which uses multiprocessing to accelerate grid search, among other things.
 
-
 implementmodel.py
 -----------------
 is the business end of this whole workflow, taking an ensemble of models produced by trainamodel.py and coordinating them (with some ad-hoc rules) in order to actually classify texts.
 
+collate_results.py
+------------------
+Once the models have spit out predictions for several million volumes (mostly nonfiction); this script sorts through them and filters out the smaller subsets that look like drama, fiction, poetry, or biography.
+
 page
 ----
 Scripts to do page-level modeling, which trims front and back matter, including nonfiction prefaces. Note that in the updated (2016) workflow this only runs _after_ volume-level modeling.
+
+subfiction
+----------
+Scripts to sort volumes _within_ the fiction subset, after they're identified. Necessary because the errors related to fiction are rather tricky; there are several different kinds of mistakes, and a second pass was necessary. Plus, I wanted to model "juvenile fiction" and provide a predicted probability for that as well. For this we use **fictrainingset.csv.**
