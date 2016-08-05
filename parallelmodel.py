@@ -77,5 +77,5 @@ def gridsearch(metapath, sourcedir, positivelabel, negativelabel, k, feature_sta
 
 if __name__ == '__main__':
 
-    gridsearch('maintrainingset.csv', '/Volumes/TARDIS/work/train20', 'dra', 'bio', 5, 200, 1000, 50, 0.001, 0.019, 10, 'dra_vs_bio_libsvm.csv')
+    gridsearch('/Volumes/TARDIS/work/german/germantraining.csv', '/Volumes/TARDIS/work/german/csvs/', 'nvl', 'non', 5, 100, 600, 50, 0.0001, .02, 8, '/Volumes/TARDIS/work/german/firstmodel.csv')
 

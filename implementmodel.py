@@ -112,6 +112,12 @@ def get_metadata(metapath):
         if 'Biography' in genres or 'Biography' in subjects:
             bio = True
 
+        if 'Autobiography' in genres or 'Autobiography' in subjects:
+            bio = True
+
+        if 'Description and travel' in subjects:
+            bio = True
+
         if 'Fiction' in genres:
             fic = True
 
