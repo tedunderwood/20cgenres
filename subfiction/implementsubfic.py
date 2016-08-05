@@ -1,54 +1,15 @@
 #!/usr/bin/env python3
 
-# implementmodel.py
+# implementsubfic.py
 
-# This script loads feature files, converts them to a dictionary of features
+# based on implementmodel.py, with alterations that streamline and
+# generalize it for simpler problems. Basically, I take out the
+# complicated ad-hoc rules I used to combine models in implementmodel,
+# and simply report probabilities.
+
+# This script still loads feature files, converts them to a dictionary of features
 # normalized according to a predefined scheme, and then uses an ensemble of genre
 # models to make predictions about genre.
-
-# The genre models are combined according to a fixed set of rules designed
-# to maximize precision on the two genres we care most about: fiction and
-# poetry.
-
-# We begin by training three one-vs-all classifiers:
-#   - fiction vs everything else
-#   - poetry vs everything else
-#   - drama vs everything else
-
-# In order to improve recall, we are extremely generous with the cutoffs
-# for flagging "fiction" and "poetry" at this stage, setting them
-# at 10% for poetry and 20% for fiction.
-
-# A volume that doesn't get flagged as fic or poe at all is of
-# no further concern. If flagged (only) 'dra' or 'bio' we add it to
-# low-precision lists of those volumes.
-
-# If a volume *was* flagged 'fic' or 'poe,' we look for conflicting
-# evidence. Conflicts can be created 1) by metadata predicting a
-# different genre, or 2) by positive results on other one-vs-all
-# classifiers, or 3) by a relatively low score on the classifier
-# that did the flagging.
-
-# To resolve the first two conflicts, we use one-vs-one models
-# between the specific genres in conflict.
-#    - fic versus poe
-#    - fic versus dra
-#    - poe versus dra
-#    - fic versus bio
-#    - poe versus bio
-
-# To address the third concern, we force vols of fic and poe
-# that got a low probability on one-vs-all (like, less than 75%)
-# to also pass the gauntlet of a fic-vs-nonfiction or poe-vs-nonfiction
-# classifier. (For this purpose nonfiction is folded in
-# with biography.) The rationale here is that by far the majority
-# of the collection is nonfiction, and these will be most of
-# our errors. We want to be super-sure that our volumes don't
-# look like nonfiction.
-
-# Those are a lot of ad-hoc rules. But I made them up out of whole
-# cloth, so ... I doubt they're "overfit" very tightly to
-# the peculiarities of the training set.
 
 
 import csv, os, sys, pickle, glob
